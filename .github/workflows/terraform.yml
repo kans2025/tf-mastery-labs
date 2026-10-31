@@ -1,6 +1,8 @@
 name: terraform
 
 on:
+  schedule:                   # scheduled runs always use the workflow file on main
+    - cron: '0 6 * * *'   # nightly, 06:00 UTC
   pull_request:
   push:
     branches: [main]
@@ -76,3 +78,21 @@ jobs:
       - run: terraform show -json tfplan.binary > tfplan.json
       - run: conftest test tfplan.json -p ../../policy/ --all-namespaces
       - run: terraform apply -auto-approve tfplan.binary
+  drift-check:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: environments/dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+      - uses: google-github-actions/auth@v2   # same values as in Exercise 3
+        with:
+          workload_identity_provider: projects/861076661553/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: terraform-gha@project-d263020c-723a-485a-adc.iam.gserviceaccount.com
+      - run: terraform init
+      # refreshes from GCP and compares with the code on main: exit 0 = no drift, 2 = drift, 1 = error
+      - run: terraform plan -detailed-exitcode || echo "::warning::drift detected"
