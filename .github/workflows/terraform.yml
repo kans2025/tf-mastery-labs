@@ -28,8 +28,8 @@ jobs:
           terraform_wrapper: false
       - uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: YOUR_WIF_PROVIDER
-          service_account: YOUR_SA@YOUR_PROJECT.iam.gserviceaccount.com
+          workload_identity_provider: projects/861076661553/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: terraform-gha@project-d263020c-723a-485a-adc.iam.gserviceaccount.com
       - name: Install Conftest
         run: |
           V=$(curl -s https://api.github.com/repos/open-policy-agent/conftest/releases/latest | grep tag_name | cut -d '"' -f4 | cut -c2-)
@@ -64,8 +64,8 @@ jobs:
           terraform_wrapper: false
       - uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: YOUR_WIF_PROVIDER
-          service_account: YOUR_SA@YOUR_PROJECT.iam.gserviceaccount.com
+          workload_identity_provider: projects/861076661553/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: terraform-gha@project-d263020c-723a-485a-adc.iam.gserviceaccount.com
       - name: Install Conftest
         run: |
           V=$(curl -s https://api.github.com/repos/open-policy-agent/conftest/releases/latest | grep tag_name | cut -d '"' -f4 | cut -c2-)
