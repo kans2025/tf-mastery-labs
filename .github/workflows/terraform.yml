@@ -1,4 +1,5 @@
 name: terraform
+
 on:
   pull_request:
   push:
@@ -8,10 +9,10 @@ on:
 permissions:
   contents: read
   pull-requests: write
-  id-token: write          # lets the auth step get Google credentials (Workload Identity Federation)
+  id-token: write
 
 env:
-  WORKDIR: environments/dev   # every Terraform step runs here; ../../policy/ is relative to it
+  WORKDIR: environments/dev
 
 jobs:
   plan:
@@ -21,16 +22,20 @@ jobs:
       run:
         working-directory: environments/dev
     steps:
-      - uses: actions/checkout@v4       # copies the repo at the commit that triggered the run
+      - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
-      # Authenticate to Google here, for example google-github-actions/auth
-      # with Workload Identity Federation (preferred) or a service account key secret.
+        with:
+          terraform_wrapper: false
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: YOUR_WIF_PROVIDER
+          service_account: YOUR_SA@YOUR_PROJECT.iam.gserviceaccount.com
       - name: Install Conftest
         run: |
           V=$(curl -s https://api.github.com/repos/open-policy-agent/conftest/releases/latest | grep tag_name | cut -d '"' -f4 | cut -c2-)
           curl -sL "https://github.com/open-policy-agent/conftest/releases/download/v${V}/conftest_${V}_Linux_x86_64.tar.gz" | tar xz conftest
           sudo mv conftest /usr/local/bin/
-      - run: terraform init           # connects to the same remote GCS state as your laptop
+      - run: terraform init
       - run: terraform plan -out=tfplan.binary
       - run: terraform show -json tfplan.binary > tfplan.json
       - run: conftest test tfplan.json -p ../../policy/ --all-namespaces
@@ -55,9 +60,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
-      # Same authentication step as the plan job.
-      # Install Conftest as in the plan job.
-      - run: terraform init           # connects to the same remote GCS state as your laptop
+        with:
+          terraform_wrapper: false
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: YOUR_WIF_PROVIDER
+          service_account: YOUR_SA@YOUR_PROJECT.iam.gserviceaccount.com
+      - name: Install Conftest
+        run: |
+          V=$(curl -s https://api.github.com/repos/open-policy-agent/conftest/releases/latest | grep tag_name | cut -d '"' -f4 | cut -c2-)
+          curl -sL "https://github.com/open-policy-agent/conftest/releases/download/v${V}/conftest_${V}_Linux_x86_64.tar.gz" | tar xz conftest
+          sudo mv conftest /usr/local/bin/
+      - run: terraform init
       - run: terraform plan -out=tfplan.binary
       - run: terraform show -json tfplan.binary > tfplan.json
       - run: conftest test tfplan.json -p ../../policy/ --all-namespaces
