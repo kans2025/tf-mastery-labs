@@ -1,4 +1,4 @@
-on:name: terraform
+name: terraform
 on:
   pull_request:
   push:
