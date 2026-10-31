@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ${{ env.WORKDIR }}
+        working-directory: environments/dev
     steps:
       - uses: actions/checkout@v4       # copies the repo at the commit that triggered the run
       - uses: hashicorp/setup-terraform@v3
@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ${{ env.WORKDIR }}
+        working-directory: environments/dev
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
