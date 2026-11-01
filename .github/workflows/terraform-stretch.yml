@@ -35,7 +35,7 @@ jobs:
           curl -sL "https://github.com/open-policy-agent/conftest/releases/download/v${V}/conftest_${V}_Linux_x86_64.tar.gz" | tar xz conftest
           sudo mv conftest /usr/local/bin/
       - run: terraform init
-      - run: terraform plan -var-file=envs/${{ matrix.environment }}.tfvars -out=tfplan.binary
+      - run: terraform plan -lock-timeout=5m -var-file=envs/${{ matrix.environment }}.tfvars -out=tfplan.binary
       - run: terraform show -json tfplan.binary > tfplan.json
       - run: conftest test tfplan.json -p ../../policy-stretch/ --all-namespaces
 
@@ -43,6 +43,7 @@ jobs:
     if: github.ref == 'refs/heads/phase4-stretch' && github.event_name == 'push'
     strategy:
       fail-fast: false
+      max-parallel: 1                     # one environment at a time: they share one state file and its lock
       matrix:
         environment: [dev, staging, prod]   # one job per value
     environment: ${{ matrix.environment }}   # ties each copy to the GitHub Environment of this name; its required reviewers gate staging and prod
@@ -65,7 +66,7 @@ jobs:
           curl -sL "https://github.com/open-policy-agent/conftest/releases/download/v${V}/conftest_${V}_Linux_x86_64.tar.gz" | tar xz conftest
           sudo mv conftest /usr/local/bin/
       - run: terraform init
-      - run: terraform plan -var-file=envs/${{ matrix.environment }}.tfvars -out=tfplan.binary   # fresh plan on this runner
+      - run: terraform plan -lock-timeout=5m -var-file=envs/${{ matrix.environment }}.tfvars -out=tfplan.binary   # fresh plan on this runner
       - run: terraform show -json tfplan.binary > tfplan.json
       - run: conftest test tfplan.json -p ../../policy-stretch/ --all-namespaces
-      - run: terraform apply -auto-approve tfplan.binary   # a saved plan already holds its variables, so no -var-file
+      - run: terraform apply -lock-timeout=5m -auto-approve tfplan.binary   # a saved plan already holds its variables, so no -var-file
