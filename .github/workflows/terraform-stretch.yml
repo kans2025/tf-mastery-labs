@@ -1,0 +1,26 @@
+on:
+  pull_request:
+  push:
+    branches: [phase4-stretch]
+
+jobs:
+  plan:
+    if: github.event_name == 'pull_request'
+    strategy:
+      matrix:
+        environment: [dev, staging, prod]   # one job per value
+    runs-on: ubuntu-latest
+    steps:
+      - run: terraform plan -var-file=envs/${{ matrix.environment }}.tfvars -out=tfplan.binary
+      - run: terraform show -json tfplan.binary > tfplan.json
+      - run: conftest test tfplan.json -p policy-stretch/
+
+  apply:
+    if: github.ref == 'refs/heads/phase4-stretch' && github.event_name == 'push'
+    strategy:
+      matrix:
+        environment: [dev, staging, prod]   # one job per value
+    environment: ${{ matrix.environment }}   # links each job to the GitHub Environment of this name; its required reviewers gate staging/prod
+    runs-on: ubuntu-latest
+    steps:
+      - run: terraform apply -auto-approve -var-file=envs/${{ matrix.environment }}.tfvars tfplan.binary
