@@ -1,26 +1,71 @@
+name: terraform-stretch
+
 on:
   pull_request:
   push:
     branches: [phase4-stretch]
 
+permissions:
+  contents: read
+  id-token: write          # lets the auth step get Google credentials (Workload Identity Federation)
+
 jobs:
   plan:
     if: github.event_name == 'pull_request'
     strategy:
+      fail-fast: false                    # one environment failing must not cancel the others
       matrix:
         environment: [dev, staging, prod]   # one job per value
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: environments/dev   # envs/ and ../../policy-stretch/ are relative to this folder
     steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/861076661553/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: terraform-gha@project-d263020c-723a-485a-adc.iam.gserviceaccount.com
+      - name: Install Conftest
+        run: |
+          V=$(curl -s https://api.github.com/repos/open-policy-agent/conftest/releases/latest | grep tag_name | cut -d '"' -f4 | cut -c2-)
+          curl -sL "https://github.com/open-policy-agent/conftest/releases/download/v${V}/conftest_${V}_Linux_x86_64.tar.gz" | tar xz conftest
+          sudo mv conftest /usr/local/bin/
+      - run: terraform init
       - run: terraform plan -var-file=envs/${{ matrix.environment }}.tfvars -out=tfplan.binary
       - run: terraform show -json tfplan.binary > tfplan.json
-      - run: conftest test tfplan.json -p policy-stretch/
+      - run: conftest test tfplan.json -p ../../policy-stretch/ --all-namespaces
 
   apply:
     if: github.ref == 'refs/heads/phase4-stretch' && github.event_name == 'push'
     strategy:
+      fail-fast: false
       matrix:
         environment: [dev, staging, prod]   # one job per value
-    environment: ${{ matrix.environment }}   # links each job to the GitHub Environment of this name; its required reviewers gate staging/prod
+    environment: ${{ matrix.environment }}   # ties each copy to the GitHub Environment of this name; its required reviewers gate staging and prod
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: environments/dev
     steps:
-      - run: terraform apply -auto-approve -var-file=envs/${{ matrix.environment }}.tfvars tfplan.binary
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/861076661553/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: terraform-gha@project-d263020c-723a-485a-adc.iam.gserviceaccount.com
+      - name: Install Conftest
+        run: |
+          V=$(curl -s https://api.github.com/repos/open-policy-agent/conftest/releases/latest | grep tag_name | cut -d '"' -f4 | cut -c2-)
+          curl -sL "https://github.com/open-policy-agent/conftest/releases/download/v${V}/conftest_${V}_Linux_x86_64.tar.gz" | tar xz conftest
+          sudo mv conftest /usr/local/bin/
+      - run: terraform init
+      - run: terraform plan -var-file=envs/${{ matrix.environment }}.tfvars -out=tfplan.binary   # fresh plan on this runner
+      - run: terraform show -json tfplan.binary > tfplan.json
+      - run: conftest test tfplan.json -p ../../policy-stretch/ --all-namespaces
+      - run: terraform apply -auto-approve tfplan.binary   # a saved plan already holds its variables, so no -var-file
