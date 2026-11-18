@@ -5,3 +5,5 @@
 *.tfplan
 tfplan*
 crash.log
+drift.plan
+drift.json
