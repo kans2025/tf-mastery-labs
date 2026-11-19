@@ -13,6 +13,10 @@ resource "google_compute_instance" "web" {
   network_interface {
     network = "default"
   }
+
+  labels = {
+    env = "prod"
+  }
 }
 
 resource "google_compute_firewall" "allow_ssh" {
