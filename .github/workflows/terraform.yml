@@ -102,8 +102,7 @@ jobs:
     defaults:
       run:
         working-directory: environments/dev    # same folder as the plan job
-    env:
-      AI_API_KEY: ${{ secrets.AI_API_KEY }}    # your AI provider key, stored as an Actions secret
+    
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
@@ -119,7 +118,8 @@ jobs:
       # review/ is at the repo root, two levels up from environments/dev
       - name: AI review
         run: |
-          ai-review --prompt ../../review/review-prompt.txt --input tfplan.json > review-output.txt
+          pip install --quiet google-auth requests
+          python ../../review/ai_review.py --prompt ../../review/review-prompt.txt --input tfplan.json > review-output.txt
           cat review-output.txt
           if grep -q "^VERDICT: CRITICAL" review-output.txt; then
             echo "::error::AI review found a CRITICAL issue"
