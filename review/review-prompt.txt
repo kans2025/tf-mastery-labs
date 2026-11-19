@@ -1,7 +1,8 @@
 Review this Terraform plan JSON and report, for each:
 1. Cost delta (estimate direction and rough magnitude)
 2. Security posture change (any access widened?)
-3. Blast radius (resource count; any production-tagged resource touched?)
+3. Blast radius (resource count; any resource whose labels include env = prod,
+   before or after the change, being created, changed or deleted is CRITICAL)
 4. Drift risk (does this plan touch anything already flagged as drifted?)
 Output CRITICAL, WARN, or OK for each category with one-line justification.
 Finish with one final line, exactly VERDICT: CRITICAL, VERDICT: WARN or
