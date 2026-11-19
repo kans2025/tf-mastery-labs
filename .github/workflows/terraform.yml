@@ -101,16 +101,18 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ${{ env.WORKDIR }}  # same folder as the plan job
+        working-directory: environments/dev    # same folder as the plan job
     env:
       AI_API_KEY: ${{ secrets.AI_API_KEY }}    # your AI provider key, stored as an Actions secret
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
-      - uses: google-github-actions/auth@v2      # REPLACE with the auth step already in your file
         with:
-          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
-          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+          terraform_wrapper: false             # keeps tfplan.json clean, same as plan
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/861076661553/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: terraform-gha@project-d263020c-723a-485a-adc.iam.gserviceaccount.com
       - run: terraform init
       - run: terraform plan -out=tfplan.binary
       - run: terraform show -json tfplan.binary > tfplan.json
