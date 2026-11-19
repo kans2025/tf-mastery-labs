@@ -38,7 +38,7 @@ jobs:
           curl -sL "https://github.com/open-policy-agent/conftest/releases/download/v${V}/conftest_${V}_Linux_x86_64.tar.gz" | tar xz conftest
           sudo mv conftest /usr/local/bin/
       - run: terraform init
-      - run: terraform plan -out=tfplan.binary
+      - run: terraform plan -lock-timeout=120s -out=tfplan.binary
       - run: terraform show -json tfplan.binary > tfplan.json
       - run: conftest test tfplan.json -p ../../policy/ --all-namespaces
       - name: Comment the plan on the PR
