@@ -33,10 +33,13 @@ jobs:
           workload_identity_provider: projects/861076661553/locations/global/workloadIdentityPools/github-pool/providers/github-provider
           service_account: terraform-gha@project-d263020c-723a-485a-adc.iam.gserviceaccount.com
       - name: Install Conftest
+        env:
+          GH_TOKEN: ${{ github.token }}     # authenticated, so no anonymous rate limit
         run: |
-          V=$(curl -s https://api.github.com/repos/open-policy-agent/conftest/releases/latest | grep tag_name | cut -d '"' -f4 | cut -c2-)
-          curl -sL "https://github.com/open-policy-agent/conftest/releases/download/v${V}/conftest_${V}_Linux_x86_64.tar.gz" | tar xz conftest
+          gh release download --repo open-policy-agent/conftest --pattern '*_Linux_x86_64.tar.gz' --output conftest.tar.gz
+          tar xzf conftest.tar.gz conftest
           sudo mv conftest /usr/local/bin/
+          conftest --version
       - run: terraform init
       - run: terraform plan -lock-timeout=120s -out=tfplan.binary
       - run: terraform show -json tfplan.binary > tfplan.json
@@ -69,10 +72,13 @@ jobs:
           workload_identity_provider: projects/861076661553/locations/global/workloadIdentityPools/github-pool/providers/github-provider
           service_account: terraform-gha@project-d263020c-723a-485a-adc.iam.gserviceaccount.com
       - name: Install Conftest
+        env:
+          GH_TOKEN: ${{ github.token }}     # authenticated, so no anonymous rate limit
         run: |
-          V=$(curl -s https://api.github.com/repos/open-policy-agent/conftest/releases/latest | grep tag_name | cut -d '"' -f4 | cut -c2-)
-          curl -sL "https://github.com/open-policy-agent/conftest/releases/download/v${V}/conftest_${V}_Linux_x86_64.tar.gz" | tar xz conftest
+          gh release download --repo open-policy-agent/conftest --pattern '*_Linux_x86_64.tar.gz' --output conftest.tar.gz
+          tar xzf conftest.tar.gz conftest
           sudo mv conftest /usr/local/bin/
+          conftest --version
       - run: terraform init
       - run: terraform plan -lock-timeout=120s -out=tfplan.binary
       - run: terraform show -json tfplan.binary > tfplan.json
