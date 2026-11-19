@@ -74,7 +74,7 @@ jobs:
           curl -sL "https://github.com/open-policy-agent/conftest/releases/download/v${V}/conftest_${V}_Linux_x86_64.tar.gz" | tar xz conftest
           sudo mv conftest /usr/local/bin/
       - run: terraform init
-      - run: terraform plan -out=tfplan.binary
+      - run: terraform plan -lock-timeout=120s -out=tfplan.binary
       - run: terraform show -json tfplan.binary > tfplan.json
       - run: conftest test tfplan.json -p ../../policy/ --all-namespaces
       - run: terraform apply -auto-approve tfplan.binary
@@ -113,7 +113,7 @@ jobs:
           workload_identity_provider: projects/861076661553/locations/global/workloadIdentityPools/github-pool/providers/github-provider
           service_account: terraform-gha@project-d263020c-723a-485a-adc.iam.gserviceaccount.com
       - run: terraform init
-      - run: terraform plan -out=tfplan.binary
+      - run: terraform plan -lock-timeout=120s -out=tfplan.binary
       - run: terraform show -json tfplan.binary > tfplan.json
       # review/ is at the repo root, two levels up from environments/dev
       - name: AI review
